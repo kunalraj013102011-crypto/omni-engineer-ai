@@ -132,6 +132,14 @@ const Index = () => {
   const handleSendMessage = async (text: string, imageUrl?: string, url?: string) => {
     if (!text.trim()) return;
 
+    // Check if this is an image generation request
+    const isImageRequest = text.toLowerCase().includes("generate image") || 
+                          text.toLowerCase().includes("create image") ||
+                          text.toLowerCase().includes("draw") ||
+                          text.toLowerCase().includes("make an image") ||
+                          text.toLowerCase().includes("generate a") ||
+                          text.toLowerCase().includes("create a");
+
     let convId = currentConversationId;
     
     if (!convId) {
@@ -144,18 +152,32 @@ const Index = () => {
     setIsLoading(true);
 
     try {
+      // Prepare request body
+      const requestBody: any = {
+        messages: [
+          ...messages.map(m => ({ role: m.role, content: m.content })),
+          { role: "user", content: text }
+        ]
+      };
+
+      // Add image generation parameters if needed
+      if (isImageRequest) {
+        requestBody.generateImage = true;
+        requestBody.imagePrompt = text;
+      }
+
       const { data, error } = await supabase.functions.invoke("ai-chat", {
-        body: {
-          messages: [
-            ...messages.map(m => ({ role: m.role, content: m.content })),
-            { role: "user", content: text }
-          ]
-        }
+        body: requestBody
       });
 
       if (error) throw error;
 
-      const aiResponse = data.response;
+      // Handle response with potential images
+      let aiResponse = data.response || "";
+      if (data.images && data.images.length > 0) {
+        aiResponse += `\n\n![Generated Image](${data.images[0]})`;
+      }
+
       await saveMessage(convId, "assistant", aiResponse);
       
     } catch (error) {

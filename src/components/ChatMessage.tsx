@@ -31,7 +31,19 @@ export const ChatMessage = ({ role, content, onSpeak }: ChatMessageProps) => {
             <p className="whitespace-pre-wrap">{content}</p>
           ) : (
             <div className="prose prose-invert max-w-none">
-              <ReactMarkdown>{content}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  img: ({ node, ...props }) => (
+                    <img 
+                      {...props} 
+                      className="rounded-lg max-w-full h-auto my-4 shadow-lg"
+                      alt={props.alt || "Generated image"}
+                    />
+                  )
+                }}
+              >
+                {content}
+              </ReactMarkdown>
             </div>
           )}
         </div>
