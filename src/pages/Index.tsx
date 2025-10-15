@@ -5,9 +5,14 @@ import { Menu, Sparkles } from "lucide-react";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { ChatMessage } from "@/components/ChatMessage";
 import { MultiModalInput } from "@/components/MultiModalInput";
+import { TypingIndicator } from "@/components/TypingIndicator";
+import { EmptyState } from "@/components/EmptyState";
+import { UserMenu } from "@/components/UserMenu";
+import { Auth } from "@/components/Auth";
 import { VoiceRecognition, VoiceSynthesis } from "@/utils/voiceUtils";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 
 interface Message {
   id: string;
@@ -23,21 +28,45 @@ interface Conversation {
 }
 
 const Index = () => {
+  const [session, setSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   
   const voiceRecognition = useRef(new VoiceRecognition());
   const voiceSynthesis = useRef(new VoiceSynthesis());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Auth state management
   useEffect(() => {
-    loadConversations();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuthLoading(false);
+      if (session) {
+        loadConversations();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      loadConversations();
+    }
+  }, [session]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -202,6 +231,21 @@ const Index = () => {
     setIsSidebarOpen(false);
   };
 
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Sparkles className="w-12 h-12 text-primary mx-auto animate-pulse-glow" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
+
   return (
     <div className="h-screen flex flex-col bg-background">
       <ChatSidebar
@@ -213,33 +257,29 @@ const Index = () => {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <header className="bg-card border-b border-border p-4 flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-primary" />
-          <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Omni Engineer AI
-          </h1>
+      <header className="bg-card border-b border-border p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-primary" />
+            <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Omni Engineer AI
+            </h1>
+          </div>
         </div>
+        <UserMenu userEmail={session.user.email} />
       </header>
 
       <ScrollArea className="flex-1 p-4">
         <div className="max-w-4xl mx-auto">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-              <Sparkles className="w-16 h-16 text-primary mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Welcome to Omni Engineer AI</h2>
-              <p className="text-muted-foreground max-w-md">
-                Your powerful AI assistant with multi-modal capabilities. Ask questions, share images, 
-                provide URLs, or use voice input. I learn from our conversation to provide better answers.
-              </p>
-            </div>
+            <EmptyState />
           ) : (
             <>
               {messages.map((msg) => (
@@ -250,20 +290,7 @@ const Index = () => {
                   onSpeak={msg.role === "assistant" ? handleSpeak : undefined}
                 />
               ))}
-              {isLoading && (
-                <div className="flex gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center flex-shrink-0 animate-pulse-glow">
-                    <Sparkles className="w-5 h-5 text-primary-foreground" />
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-4 border border-border">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isLoading && <TypingIndicator />}
               <div ref={messagesEndRef} />
             </>
           )}
