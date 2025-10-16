@@ -5,13 +5,47 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Free web search using DuckDuckGo
+async function performWebSearch(query: string): Promise<string> {
+  try {
+    const searchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1`;
+    const response = await fetch(searchUrl);
+    const data = await response.json();
+    
+    let results = '';
+    
+    // Get abstract
+    if (data.Abstract) {
+      results += `Summary: ${data.Abstract}\n\n`;
+    }
+    
+    // Get related topics
+    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+      results += 'Related Information:\n';
+      data.RelatedTopics.slice(0, 5).forEach((topic: any, index: number) => {
+        if (topic.Text) {
+          results += `${index + 1}. ${topic.Text}\n`;
+          if (topic.FirstURL) {
+            results += `   Source: ${topic.FirstURL}\n`;
+          }
+        }
+      });
+    }
+    
+    return results || 'No specific results found. Please try a different search query.';
+  } catch (error) {
+    console.error('Web search error:', error);
+    return 'Web search unavailable at the moment.';
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, model, generateImage, imagePrompt } = await req.json();
+    const { messages, model, generateImage, imagePrompt, webSearch, searchQuery } = await req.json();
     
     // Validate input
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -37,6 +71,18 @@ serve(async (req) => {
       );
     }
 
+    // Handle web search if requested
+    if (webSearch && searchQuery) {
+      console.log("Performing web search for:", searchQuery);
+      const searchResults = await performWebSearch(searchQuery);
+      
+      // Add search results to the conversation context
+      messages.push({
+        role: "system",
+        content: `Web Search Results for "${searchQuery}":\n\n${searchResults}`
+      });
+    }
+
     // Use Claude Sonnet 4.5 for best reasoning, Nano Banana for image generation
     let selectedModel = model || "anthropic/claude-sonnet-4.5";
     let requestBody: any = {
@@ -44,7 +90,7 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "You are Omni Engineer AI, the world's most advanced engineering assistant with unparalleled reasoning capabilities. You excel at software architecture, algorithm design, system optimization, and creative problem-solving. You write clean, efficient, production-ready code following best practices. You can design complex systems, debug intricate issues, and provide innovative solutions across all engineering domains. You think deeply, reason step-by-step, and deliver exceptional results."
+          content: "You are Omni Engineer AI, the world's most advanced engineering assistant with unparalleled reasoning capabilities. You excel at software architecture, algorithm design, system optimization, and creative problem-solving. You write clean, efficient, production-ready code following best practices. You can design complex systems, debug intricate issues, and provide innovative solutions across all engineering domains. You have access to web search results when provided. You think deeply, reason step-by-step, and deliver exceptional results."
         },
         ...messages
       ],

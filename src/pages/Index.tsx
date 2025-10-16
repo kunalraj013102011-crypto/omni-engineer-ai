@@ -163,6 +163,15 @@ const Index = () => {
         ]
       };
 
+      // Check if this is a web search request
+      const searchKeywords = ["search", "look up", "find information", "what is", "who is", "tell me about"];
+      const isSearchRequest = searchKeywords.some(keyword => text.toLowerCase().includes(keyword));
+      
+      if (isSearchRequest) {
+        requestBody.webSearch = true;
+        requestBody.searchQuery = text;
+      }
+
       // Add image generation parameters if needed
       if (isImageRequest) {
         requestBody.generateImage = true;
