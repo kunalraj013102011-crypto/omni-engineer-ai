@@ -152,10 +152,13 @@ const Index = () => {
     setIsLoading(true);
 
     try {
+      // Limit conversation history to last 20 messages to prevent token overflow
+      const recentMessages = messages.slice(-20).map(m => ({ role: m.role, content: m.content }));
+      
       // Prepare request body
       const requestBody: any = {
         messages: [
-          ...messages.map(m => ({ role: m.role, content: m.content })),
+          ...recentMessages,
           { role: "user", content: text }
         ]
       };
@@ -180,11 +183,14 @@ const Index = () => {
 
       await saveMessage(convId, "assistant", aiResponse);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error calling AI:", error);
+      
+      const errorMessage = error?.message || "Failed to get AI response. Please try again.";
+      
       toast({
         title: "Error",
-        description: "Failed to get AI response",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

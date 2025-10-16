@@ -85,9 +85,25 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenRouter API error:", response.status, errorText);
+      
+      let userMessage = "AI service error. Please try again.";
+      
+      // Parse common errors for user-friendly messages
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.metadata?.raw) {
+          const rawError = JSON.parse(errorData.error.metadata.raw);
+          if (rawError.error?.message?.includes("prompt is too long")) {
+            userMessage = "Conversation is too long. Please start a new conversation.";
+          }
+        }
+      } catch (e) {
+        // Use default message if parsing fails
+      }
+      
       return new Response(
         JSON.stringify({ 
-          error: `OpenRouter API error: ${response.status}`,
+          error: userMessage,
           details: errorText 
         }),
         { 
