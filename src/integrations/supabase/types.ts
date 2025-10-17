@@ -16,25 +16,67 @@ export type Database = {
     Tables: {
       conversations: {
         Row: {
+          conversation_type:
+            | Database["public"]["Enums"]["conversation_type"]
+            | null
           created_at: string | null
+          expert_field: Database["public"]["Enums"]["expert_field"] | null
           id: string
           title: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          conversation_type?:
+            | Database["public"]["Enums"]["conversation_type"]
+            | null
           created_at?: string | null
+          expert_field?: Database["public"]["Enums"]["expert_field"] | null
           id?: string
           title?: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          conversation_type?:
+            | Database["public"]["Enums"]["conversation_type"]
+            | null
           created_at?: string | null
+          expert_field?: Database["public"]["Enums"]["expert_field"] | null
           id?: string
           title?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      daily_lessons: {
+        Row: {
+          content: string
+          created_at: string | null
+          day_number: number
+          difficulty: string | null
+          field: Database["public"]["Enums"]["expert_field"]
+          id: string
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          day_number: number
+          difficulty?: string | null
+          field: Database["public"]["Enums"]["expert_field"]
+          id?: string
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          day_number?: number
+          difficulty?: string | null
+          field?: Database["public"]["Enums"]["expert_field"]
+          id?: string
+          title?: string
         }
         Relationships: []
       }
@@ -103,6 +145,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_lesson_progress: {
+        Row: {
+          completed_at: string | null
+          id: string
+          lesson_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          lesson_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          lesson_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_lesson_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "daily_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -111,7 +182,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      conversation_type: "chat" | "expert" | "lesson" | "project_analysis"
+      expert_field:
+        | "software_engineering"
+        | "electrical_engineering"
+        | "mechanical_engineering"
+        | "civil_engineering"
+        | "chemical_engineering"
+        | "data_science"
+        | "robotics"
+        | "ai_ml"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -238,6 +318,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      conversation_type: ["chat", "expert", "lesson", "project_analysis"],
+      expert_field: [
+        "software_engineering",
+        "electrical_engineering",
+        "mechanical_engineering",
+        "civil_engineering",
+        "chemical_engineering",
+        "data_science",
+        "robotics",
+        "ai_ml",
+      ],
+    },
   },
 } as const

@@ -9,6 +9,9 @@ import { TypingIndicator } from "@/components/TypingIndicator";
 import { EmptyState } from "@/components/EmptyState";
 import { UserMenu } from "@/components/UserMenu";
 import { Auth } from "@/components/Auth";
+import { DailyLessons } from "@/components/DailyLessons";
+import { ProjectAnalysis } from "@/components/ProjectAnalysis";
+import { ExpertSelector, ExpertField } from "@/components/ExpertSelector";
 import { VoiceRecognition, VoiceSynthesis } from "@/utils/voiceUtils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +39,8 @@ const Index = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [currentSection, setCurrentSection] = useState<'chat' | 'lessons' | 'analysis'>('chat');
+  const [selectedExpert, setSelectedExpert] = useState<ExpertField>();
   
   const voiceRecognition = useRef(new VoiceRecognition());
   const voiceSynthesis = useRef(new VoiceSynthesis());
@@ -292,6 +297,8 @@ const Index = () => {
         onNewConversation={handleNewConversation}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        onNavigate={setCurrentSection}
+        currentSection={currentSection}
       />
 
       <header className="bg-card border-b border-border p-4 flex items-center justify-between">
@@ -313,33 +320,53 @@ const Index = () => {
         <UserMenu userEmail={session.user.email} />
       </header>
 
-      <ScrollArea className="flex-1 p-4">
-        <div className="max-w-4xl mx-auto">
-          {messages.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <>
-              {messages.map((msg) => (
-                <ChatMessage
-                  key={msg.id}
-                  role={msg.role}
-                  content={msg.content}
-                  onSpeak={msg.role === "assistant" ? handleSpeak : undefined}
-                />
-              ))}
-              {isLoading && <TypingIndicator />}
-              <div ref={messagesEndRef} />
-            </>
-          )}
-        </div>
-      </ScrollArea>
+      {currentSection === 'chat' && (
+        <>
+          <div className="p-4 border-b">
+            <ExpertSelector value={selectedExpert} onChange={setSelectedExpert} />
+          </div>
+          
+          <ScrollArea className="flex-1 p-4">
+            <div className="max-w-4xl mx-auto">
+              {messages.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <>
+                  {messages.map((msg) => (
+                    <ChatMessage
+                      key={msg.id}
+                      role={msg.role}
+                      content={msg.content}
+                      onSpeak={msg.role === "assistant" ? handleSpeak : undefined}
+                    />
+                  ))}
+                  {isLoading && <TypingIndicator />}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+          </ScrollArea>
 
-      <MultiModalInput
-        onSendMessage={handleSendMessage}
-        onVoiceInput={handleVoiceInput}
-        isRecording={isRecording}
-        disabled={isLoading}
-      />
+          <MultiModalInput
+            onSendMessage={handleSendMessage}
+            onVoiceInput={handleVoiceInput}
+            isRecording={isRecording}
+            disabled={isLoading}
+          />
+        </>
+      )}
+
+      {currentSection === 'lessons' && (
+        <div className="flex-1 p-6 overflow-auto">
+          <DailyLessons />
+        </div>
+      )}
+
+      {currentSection === 'analysis' && (
+        <div className="flex-1 p-6 overflow-auto">
+          <ProjectAnalysis />
+        </div>
+      )}
     </div>
   );
 };
