@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Search, X, GraduationCap, FileText, Users } from "lucide-react";
+import { MessageCircle, Search, X, GraduationCap, FileText, Users, FlaskConical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface Conversation {
@@ -34,6 +35,7 @@ export const ChatSidebar = ({
   currentSection,
 }: ChatSidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   const filteredConversations = conversations.filter((conv) =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -78,6 +80,14 @@ export const ChatSidebar = ({
         >
           <FileText className="mr-2 h-4 w-4" />
           Project Analysis
+        </Button>
+        <Button 
+          onClick={() => navigate('/lab')}
+          variant="ghost"
+          className="w-full justify-start"
+        >
+          <FlaskConical className="mr-2 h-4 w-4" />
+          Laboratory Hub
         </Button>
       </div>
 
