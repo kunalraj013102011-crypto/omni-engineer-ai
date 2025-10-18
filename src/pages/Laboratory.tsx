@@ -6,11 +6,11 @@ const Laboratory = () => {
   const navigate = useNavigate();
 
   const labButtons = [
-    { id: "circuit", label: "Circuit Simulation", icon: CircuitBoard, position: "top-center", available: true },
-    { id: "3d", label: "3D/Cubify", icon: Box, position: "top-right", available: true },
+    { id: "circuit", label: "Circuit Simulation", icon: CircuitBoard, position: "top-center", available: false },
+    { id: "3d", label: "3D/Cubify", icon: Box, position: "top-right", available: true, route: "/3d-lab" },
     { id: "ai-scientists", label: "AI Scientists", icon: Brain, position: "middle-right", available: true, route: "/" },
     { id: "visual", label: "Visual Circuit", icon: Eye, position: "bottom-right", available: false },
-    { id: "engineering", label: "Engineering AI", icon: Atom, position: "bottom-left", available: true },
+    { id: "engineering", label: "Engineering AI", icon: Atom, position: "bottom-left", available: true, route: "/" },
   ];
 
   const getButtonPosition = (position: string) => {

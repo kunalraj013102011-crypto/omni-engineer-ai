@@ -50,7 +50,7 @@ export const ChatSidebar = ({
   return (
     <div className="fixed inset-y-0 left-0 z-50 w-80 bg-card border-r border-border flex flex-col">
       <div className="p-4 border-b border-border flex items-center justify-between">
-        <h2 className="font-semibold text-foreground">AI Engineer</h2>
+        <h2 className="font-semibold text-foreground">K.R.I.S</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="w-5 h-5" />
         </Button>
